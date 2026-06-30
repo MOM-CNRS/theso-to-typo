@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # Auteur : Grégory BLIAULT / gregory.bliault@mom.fr
 # Licence : GPLv3 — voir LICENSE
-
 """
 Exporte TOUS les concepts d'une branche SKOS (ex. "Typologie" du thésaurus
-Ceramique_Lyon_th253.rdf) en CSV (format modele.csv), SANS déterminer le
-niveau (code_categorie / code_groupe / code_serie / code_type restent vides).
+Ceramique_Lyon_th253.rdf) en CSV (format modele.csv).
 
-Utile pour relire/trier le contenu avant de décider comment classer chaque
-concept (catégorie, groupe, série, type), notamment en complétant ensuite la
-colonne d'aide "_profondeur" / "_parent" (à supprimer avant import dans
-OpenTypo, ce sont juste des béquilles pour t'aider à trier).
+code_categorie / code_groupe / code_serie restent vides (à déterminer
+manuellement). En revanche, pour les concepts FEUILLES (sans skos:narrower),
+on considère que ce sont des types : code_type est rempli automatiquement
+avec la partie du prefLabel avant le premier espace (ex. "A.1 Pot à col
+tronconique..." -> code_type = "A.1").
 
 Usage:
     python3 export_csv_brut.py --rdf Ceramique_Lyon_th253.rdf --root-label "Typologie" --out export_typologie.csv
@@ -111,6 +110,11 @@ def description_from_skos(c: dict) -> str:
     return " ".join(parts)
 
 
+def code_type_from_label(label: str) -> str:
+    """'A.1 Pot à col tronconique...' -> 'A.1' (partie avant le 1er espace)."""
+    return label.split(" ", 1)[0].strip() if label else ""
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--rdf", required=True)
@@ -127,11 +131,15 @@ def main():
         order = [o for o in order if o[1] > 0]
 
     rows = []
+    leaf_count = 0
     for uri, depth, parent_label in order:
         c = concepts[uri]
         row = {col: "" for col in CSV_COLUMNS}
         row["nom_complet_fr"] = c["label"] or ""
         row["description_fr"] = description_from_skos(c)
+        if not c["narrower"]:  # feuille -> type
+            row["code_type"] = code_type_from_label(c["label"])
+            leaf_count += 1
         rows.append(row)
 
     with open(args.out, "w", newline="", encoding="utf-8") as f:
@@ -140,7 +148,8 @@ def main():
         writer.writerows(rows)
 
     print(f"{len(rows)} concepts exportés sous '{args.root_label}' -> {args.out}")
-    print("Colonnes code_categorie / code_groupe / code_serie / code_type laissées vides, à toi de les remplir.")
+    print(f"{leaf_count} feuille(s) classée(s) en TYPE (code_type rempli automatiquement).")
+    print("Colonnes code_categorie / code_groupe / code_serie laissées vides, à toi de les remplir.")
 
 
 if __name__ == "__main__":
