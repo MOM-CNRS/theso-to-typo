@@ -4,6 +4,10 @@ Scripts Python pour importer des thésaurus SKOS (RDF/XML) vers [OpenTypo](https
 
 Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus réels (Bibracte, Open Celtic Thesaurus, Céramique Lyon). Les hiérarchies SKOS ne sont pas toujours régulières (profondeur variable selon les branches), donc les scripts proposent plusieurs stratégies de classement configurables plutôt qu'un mapping figé.
 
+## Avertissement
+
+⚠️ Ces scripts sont des expérimentations réalisées lors de la journée de test d'OpenTypo le 30 juin 2026 à Lyon. Je ne garantis pas qu'ils exportent ou importent correctement l'intégralité des thésaurus vers OpenTypo : les hiérarchies SKOS réelles sont parfois irrégulières, et le mapping vers les niveaux OpenTypo (REFERENTIEL/CATEGORIE/GROUPE/SERIE/TYPE) repose sur des heuristiques qui peuvent ne pas correspondre à tous les cas. Vérifie toujours les résultats (--dry-run, relecture des CSV générés) avant tout import en production. Utilisation à tes propres risques.
+
 ## Sommaire des scripts
 
 | Script | Rôle |
@@ -142,6 +146,11 @@ python3 export_csv_brut.py \
 - Le nom du champ `id` renvoyé par l'API OpenTypo dans `push_entity()` (`id` / `entityId` / `entity_id`) est géré en fallback ; adapte si l'API renvoie un autre nom de champ.
 - `import_skos_single_referentiel.py` et `import_skos_forest.py` sont idempotents via leur fichier de mapping JSON, mais ce mapping est local à la machine : pas de vérification d'existence côté serveur en cas de ré-exécution depuis une autre machine.
 - Certaines définitions SKOS contiennent du HTML brut (balises `<p>`, `<strong>`, etc.) repris tel quel dans `description_fr` par `export_csv_brut.py` : à nettoyer si besoin avant import.
+
+## Auteur
+
+Gregory Bliault
+
 
 ## Licence
 
