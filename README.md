@@ -6,7 +6,7 @@ Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus 
 
 ## Avertissement
 
-⚠️ Ces scripts sont des expérimentations réalisées lors de la journée de test d'OpenTypo le 30 juin 2026 à Lyon. Je ne garantis pas qu'ils exportent ou importent correctement l'intégralité des thésaurus vers OpenTypo : les hiérarchies SKOS réelles sont parfois irrégulières, et le mapping vers les niveaux OpenTypo (REFERENTIEL/CATEGORIE/GROUPE/SERIE/TYPE) repose sur des heuristiques qui peuvent ne pas correspondre à tous les cas. Vérifie toujours les résultats (--dry-run, relecture des CSV générés) avant tout import en production. Utilisation à tes propres risques.
+⚠️ Ces scripts sont des expérimentations réalisées lors de la journée de test d'OpenTypo le 30 juin 2026 à Lyon. Je ne garantis pas qu'ils exportent ou importent correctement l'intégralité des thésaurus vers OpenTypo : les hiérarchies SKOS réelles sont parfois irrégulières, et le mapping vers les niveaux OpenTypo (REFERENTIEL/CATEGORIE/GROUPE/SERIE/TYPE) repose sur des heuristiques qui peuvent ne pas correspondre à tous les cas. Vérifie toujours les résultats (`--dry-run`, relecture des CSV générés) avant tout import en production. Utilisation à tes propres risques.
 
 ## Sommaire des scripts
 
@@ -14,8 +14,9 @@ Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus 
 |---|---|
 | `import_skos_single_referentiel.py` | Import via l'API OpenTypo (`POST /api/v1/entities`) d'**un seul** référentiel racine, avec mapping fixe par profondeur (`REFERENTIEL > CATEGORIE > GROUPE > SERIE > TYPE`). Idempotent (reprise via `mapping.json`). |
 | `import_skos_forest.py` | Version généralisée du précédent : gère une **forêt** de plusieurs référentiels (les enfants directs du concept racine du scheme deviennent chacun un référentiel séparé), avec un mode de classement `fixed` (profondeur stricte) ou `auto` (adaptatif, robuste aux branches irrégulières). |
-| `generate_csv_open_celtic_thesaurus.py` | Génère, à partir d'un thésaurus SKOS, un CSV d'import en masse par référentiel (format compatible avec l'importeur CSV d'OpenTypo : `code_categorie` / `code_groupe` / `code_serie` / `code_type`), avec gestion des illustrations (URL + légende). Hiérarchie fixe sur 4 niveaux, vérifiée pour Open Celtic Thesaurus. |
-| `export_csv_brut.py` | Exporte tous les concepts d'une branche SKOS en CSV (format modele.csv) sans présupposer toute la hiérarchie : seuls les concepts feuilles sont classés en TYPE (code_type = partie du label avant le 1er espace), les colonnes `code_categorie`/`code_groupe`/`code_serie` restent vides pour un tri manuel ultérieur. |
+| `generate_csv_open_celtic_thesaurus.py` | Génère, à partir d'un thésaurus SKOS, un CSV d'import en masse par référentiel (format **numismatique**, compatible avec l'importeur CSV d'OpenTypo), avec gestion des illustrations (URL + légende). Hiérarchie fixe sur 4 niveaux, vérifiée pour Open Celtic Thesaurus. |
+| `export_csv_brut.py` | Exporte tous les concepts d'une branche SKOS en CSV (format **numismatique**, séparateur point-virgule) sans présupposer toute la hiérarchie : seuls les concepts feuilles sont classés en TYPE (`code_type` = partie du label avant le 1er espace), les colonnes `code_categorie`/`code_groupe`/`code_serie` restent vides pour un tri manuel ultérieur. |
+| `export_csv_brut_ceramique.py` | Identique à `export_csv_brut.py` mais au format **céramique** (séparateur virgule, colonnes spécifiques : `description_form`, `description_decors`, `caract_phys_fabrication`, etc.). `description_fr` depuis `skos:definition`, `description_form` depuis `skos:note`. |
 
 ## Pré-requis
 
@@ -23,11 +24,11 @@ Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus 
 pip install requests
 ```
 
+(`generate_csv_open_celtic_thesaurus.py`, `export_csv_brut.py` et `export_csv_brut_ceramique.py` n'utilisent que la bibliothèque standard.)
+
 ## Documentation OpenTypo
 - API : [https://opentypo.mom.fr/swagger-ui/index.html](https://opentypo.mom.fr/swagger-ui/index.html)
-- Import CSV (voir module d'import sur l'appli)
-
-(`generate_csv_open_celtic_thesaurus.py` et `export_csv_brut.py` n'utilisent que la bibliothèque standard.)
+- Import CSV (voir module d'import sur l'appli). Le format diffère selon le modèle (céramique, monnaie, ...)
 
 ## 1. Import API — `import_skos_single_referentiel.py` (référentiel unique)
 
@@ -94,7 +95,7 @@ En plus de celles de `import_skos_single_referentiel.py` :
 
 ## 3. Génération CSV en masse — `generate_csv_open_celtic_thesaurus.py`
 
-Génère **un CSV par référentiel** au format attendu par l'importeur CSV d'OpenTypo, en respectant ses règles de remplissage :
+Génère **un CSV par référentiel** au format numismatique attendu par l'importeur CSV d'OpenTypo, en respectant ses règles de remplissage :
 
 | Colonne | Règle |
 |---|---|
@@ -124,17 +125,17 @@ python3 generate_csv_open_celtic_thesaurus.py \
 
 ### Description et illustrations
 
-- `description_fr` est reconstruite depuis `skos:definition` (description du droit) et `skos:note` (description du revers) quand ils existent.
+- `description_fr` est reconstruite depuis `skos:definition` et `skos:note` quand ils existent.
 - `illustrations` : associe les codes (préfixe par lequel le `prefLabel` commence) à une liste de couples `(légende, url)` via le dictionnaire `ID_TO_URLS` en tête de script. Format final dans le CSV : `legende:url||legende:url||...`. Édite cette table directement dans le script selon tes besoins.
 
-Toutes les autres colonnes du modèle (datation, production, attestations, caractéristiques physiques, références, relations, commentaire) sont laissées vides.
+Toutes les autres colonnes du modèle sont laissées vides.
 
-## 4. Export brut pour tri manuel — `export_csv_brut.py`
+## 4. Export brut numismatique — `export_csv_brut.py`
 
-À utiliser quand la hiérarchie d'une branche SKOS n'est pas encore claire / décidée (ex. branche "Typologie" du thésaurus Céramique Lyon). Exporte tous les concepts de la branche en CSV (format modele.csv), sans présupposer categorie/groupe/serie :
+À utiliser quand la hiérarchie d'une branche SKOS n'est pas encore décidée, pour un thésaurus numismatique. Exporte tous les concepts de la branche en CSV (format modèle numismatique, séparateur point-virgule) :
 
-- les concepts **feuilles** (sans `skos:narrower`) sont considérés comme des TYPE : `code_type` est rempli automatiquement avec la partie du `prefLabel` avant le premier espace (ex. `"A.1 Pot à col tronconique..."` → `code_type = "A.1"`)
-- `code_categorie` / `code_groupe` / `code_serie` restent vides, à remplir manuellement après relecture
+- les concepts **feuilles** (sans `skos:narrower`) sont classés en TYPE : `code_type` = partie du `prefLabel` avant le premier espace
+- `code_categorie` / `code_groupe` / `code_serie` restent vides, à remplir manuellement
 - `nom_complet_fr` et `description_fr` (depuis `skos:definition`/`skos:note`) sont déjà renseignés
 
 ```bash
@@ -144,17 +145,33 @@ python3 export_csv_brut.py \
   --out export_typologie.csv
 ```
 
+## 5. Export brut céramique — `export_csv_brut_ceramique.py`
+
+Identique au précédent mais au **format céramique** (séparateur virgule, colonnes différentes). À utiliser pour préparer un import céramique dans OpenTypo quand la hiérarchie n'est pas encore décidée.
+
+Colonnes spécifiques au format céramique (absentes du format numismatique) : `description_form`, `description_decors`, `description_marques`, `description_fonction`, `caract_phys_fabrication`, `caract_phys_description_pate`, `caract_phys_couleur_pate`, `caract_phys_nature_pate`, `caract_phys_inclusion`, `caract_phys_cuisson`.
+
+- `description_fr` ← `skos:definition`
+- `description_form` ← `skos:note`
+- `code_type` = partie du `prefLabel` avant le premier espace (feuilles uniquement)
+
+```bash
+python3 export_csv_brut_ceramique.py \
+  --rdf Ceramique_Lyon_th253.rdf \
+  --root-label "Typologie" \
+  --out export_typologie_ceramique.csv
+```
+
 ## Limites connues / points d'attention
 
-- Les hiérarchies SKOS réelles ne sont pas toujours homogènes en profondeur : vérifie toujours en `--dry-run` (scripts API) ou en relisant la répartition par niveau affichée en console (script CSV) avant de pousser des données en masse.
+- Les hiérarchies SKOS réelles ne sont pas toujours homogènes en profondeur : vérifie toujours en `--dry-run` (scripts API) ou en relisant la répartition par niveau affichée en console (scripts CSV) avant de pousser des données en masse.
 - Le nom du champ `id` renvoyé par l'API OpenTypo dans `push_entity()` (`id` / `entityId` / `entity_id`) est géré en fallback ; adapte si l'API renvoie un autre nom de champ.
 - `import_skos_single_referentiel.py` et `import_skos_forest.py` sont idempotents via leur fichier de mapping JSON, mais ce mapping est local à la machine : pas de vérification d'existence côté serveur en cas de ré-exécution depuis une autre machine.
-- Certaines définitions SKOS contiennent du HTML brut (balises `<p>`, `<strong>`, etc.) repris tel quel dans `description_fr` par `export_csv_brut.py` : à nettoyer si besoin avant import.
+- Certaines définitions SKOS contiennent du HTML brut (balises `<p>`, `<strong>`, etc.) repris tel quel dans `description_fr` et `description_form` : à nettoyer si besoin avant import.
 
 ## Auteur
 
 Gregory Bliault
-
 
 ## Licence
 
