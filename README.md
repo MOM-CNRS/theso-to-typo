@@ -15,7 +15,7 @@ Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus 
 | `import_skos_single_referentiel.py` | Import via l'API OpenTypo (`POST /api/v1/entities`) d'**un seul** référentiel racine, avec mapping fixe par profondeur (`REFERENTIEL > CATEGORIE > GROUPE > SERIE > TYPE`). Idempotent (reprise via `mapping.json`). |
 | `import_skos_forest.py` | Version généralisée du précédent : gère une **forêt** de plusieurs référentiels (les enfants directs du concept racine du scheme deviennent chacun un référentiel séparé), avec un mode de classement `fixed` (profondeur stricte) ou `auto` (adaptatif, robuste aux branches irrégulières). |
 | `generate_csv_open_celtic_thesaurus.py` | Génère, à partir d'un thésaurus SKOS, un CSV d'import en masse par référentiel (format **numismatique**, compatible avec l'importeur CSV d'OpenTypo), avec gestion des illustrations (URL + légende). Hiérarchie fixe sur 4 niveaux, vérifiée pour Open Celtic Thesaurus. |
-| `export_csv_brut.py` | Exporte tous les concepts d'une branche SKOS en CSV (format **numismatique**, séparateur point-virgule) sans présupposer toute la hiérarchie : seuls les concepts feuilles sont classés en TYPE (`code_type` = partie du label avant le 1er espace), les colonnes `code_categorie`/`code_groupe`/`code_serie` restent vides pour un tri manuel ultérieur. |
+| `export_csv_brut_monnais.py` | Exporte tous les concepts d'une branche SKOS en CSV (format **numismatique**, séparateur point-virgule) sans présupposer toute la hiérarchie : seuls les concepts feuilles sont classés en TYPE (`code_type` = partie du label avant le 1er espace), les colonnes `code_categorie`/`code_groupe`/`code_serie` restent vides pour un tri manuel ultérieur. |
 | `export_csv_brut_ceramique.py` | Identique à `export_csv_brut.py` mais au format **céramique** (séparateur virgule, colonnes spécifiques : `description_form`, `description_decors`, `caract_phys_fabrication`, etc.). `description_fr` depuis `skos:definition`, `description_form` depuis `skos:note`. |
 
 ## Pré-requis
@@ -130,7 +130,7 @@ python3 generate_csv_open_celtic_thesaurus.py \
 
 Toutes les autres colonnes du modèle sont laissées vides.
 
-## 4. Export brut numismatique — `export_csv_brut.py`
+## 4. Export brut numismatique — `export_csv_brut_monnaie.py`
 
 À utiliser quand la hiérarchie d'une branche SKOS n'est pas encore décidée, pour un thésaurus numismatique. Exporte tous les concepts de la branche en CSV (format modèle numismatique, séparateur point-virgule) :
 
