@@ -23,6 +23,10 @@ Ces scripts ont été écrits au fil de l'eau pour traiter plusieurs thésaurus 
 pip install requests
 ```
 
+## Documentation OpenTypo
+- API : [https://opentypo.mom.fr/swagger-ui/index.html](https://opentypo.mom.fr/swagger-ui/index.html)
+- Import CSV (voir module d'import sur l'appli)
+
 (`generate_csv_open_celtic_thesaurus.py` et `export_csv_brut.py` n'utilisent que la bibliothèque standard.)
 
 ## 1. Import API — `import_skos_single_referentiel.py` (référentiel unique)
